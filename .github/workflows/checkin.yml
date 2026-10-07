@@ -1,0 +1,44 @@
+name: 云智手机每日打卡
+
+on:
+  schedule:
+    # 每天北京时间 08:17（UTC 00:17）自动打卡
+    - cron: '17 0 * * *'
+  workflow_dispatch: # 支持手动触发
+
+permissions:
+  contents: none
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 安装 Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: 执行打卡并领取奖励
+        env:
+          YUNZHI_AUTH_JSON: ${{ secrets.YUNZHI_AUTH_JSON }}
+          YUNZHI_URL: https://yunzhi.play.cn/ai/?channel_code=00000042
+        run: node scripts/checkin.js
+
+      - name: 上传截图和页面快照
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkin-artifacts-${{ github.run_number }}
+          path: artifacts/
+          retention-days: 14
