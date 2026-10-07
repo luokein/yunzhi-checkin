@@ -19,6 +19,7 @@ const ENTRY_PATTERNS = [
   /福利/,
 ];
 const CLAIM_PATTERNS = [
+  /开心收下/,
   /开心领取/,
   /领取奖励/,
   /立即领取/,
@@ -28,7 +29,15 @@ const CLAIM_PATTERNS = [
   /打\s*卡/,
 ];
 // 出现这些文案说明今天已经完成，算成功
-const DONE_PATTERNS = [/已领取/, /已签到/, /已打卡/, /明日再来/, /明天再来/, /已完成/];
+const DONE_PATTERNS = [
+  /已领取/,
+  /领取成功/,
+  /已签到/,
+  /已打卡/,
+  /明日再来/,
+  /明天再来/,
+  /已完成/,
+];
 // 出现这些说明登录态失效，必须失败退出以便收到通知
 const LOGIN_PATTERNS = [/免密登录/, /验证码登录/, /账号密码登录/];
 
@@ -157,11 +166,9 @@ async function main() {
     }
 
     // 2. 点"开心领取奖励"一类的按钮，多轮尝试
-    let claimed = false;
     for (let round = 0; round < 5; round++) {
       const ok = await clickByText(page, CLAIM_PATTERNS);
       if (!ok) break;
-      claimed = true;
       await sleep(2000);
       await closePopups(page);
       const t = await pageText(page);
@@ -177,7 +184,7 @@ async function main() {
     await page.screenshot({ path: shot, fullPage: true });
     fs.writeFileSync(path.join(outDir, 'page.html'), await page.content(), 'utf8');
 
-    if (DONE_PATTERNS.some((re) => re.test(text)) || claimed) {
+    if (DONE_PATTERNS.some((re) => re.test(text))) {
       console.log('[success] 今日打卡/领奖完成 ✅');
       return;
     }

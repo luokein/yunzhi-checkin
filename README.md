@@ -74,7 +74,7 @@ YUNZHI_AUTH_JSON="$(cat auth.json)" npm run checkin
 ## 注意事项
 
 - `auth.json` 等于你的账号凭证，**不要提交到仓库**（已在 .gitignore 中忽略）。
-- 脚本会自动识别「已领取 / 已签到 / 明日再来」等完成态，重复执行不会出错。
+- 脚本会点击「开心收下」等领奖按钮，并在页面出现「已领取 / 已签到 / 明日再来」等完成态后才报告成功；仅点击按钮但未确认完成会让任务失败，便于检查 Artifacts。
 - 若页面改版导致按钮文案变化，可在 `scripts/checkin.js` 顶部的
   `ENTRY_PATTERNS` / `CLAIM_PATTERNS` 里补充新文案。
 - GitHub 的定时任务在仓库长期无活动时可能被自动停用，偶尔 push 一次或手动触发即可保持活跃。
