@@ -1,0 +1,68 @@
+name: 云智手机每日打卡
+
+on:
+  schedule:
+    # 每天北京时间 08:17（UTC 00:17）自动打卡
+    - cron: '17 0 * * *'
+  workflow_dispatch: # 支持手动触发
+
+permissions:
+  contents: none
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 安装 Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: 执行打卡并领取奖励
+        id: checkin
+        env:
+          YUNZHI_AUTH_JSON: ${{ secrets.YUNZHI_AUTH_JSON }}
+          YUNZHI_URL: https://yunzhi.play.cn/ai/?channel_code=00000042
+        run: node scripts/checkin.js
+
+      - name: 上传截图和页面快照
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkin-artifacts-${{ github.run_number }}
+          path: artifacts/
+          retention-days: 14
+
+      - name: 发送结果邮件
+        if: always()
+        continue-on-error: true # 邮件未配置或发送失败不影响打卡结果
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.163.com
+          server_port: 465
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }} # 163 邮箱客户端授权码，非登录密码
+          subject: >-
+            云智打卡 ${{ steps.checkin.outcome == 'success' && '✅ 成功' || '❌ 失败' }}
+            (${{ github.run_started_at }})
+          to: luokein@gmail.com
+          from: 云智打卡机器人 <${{ secrets.MAIL_USERNAME }}> # 163 要求发件人与登录账号一致
+          body: >-
+            打卡结果: ${{ steps.checkin.outcome == 'success' && '成功 ✅' || '失败 ❌' }}
+
+            运行详情: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            附件是本次运行的页面截图。若提示"需要重新登录"，请重新运行
+            scripts/export-login.js 并更新仓库 Secret YUNZHI_AUTH_JSON。
+          attachments: artifacts/*.png

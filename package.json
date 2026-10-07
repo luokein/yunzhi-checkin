@@ -1,0 +1,13 @@
+{
+  "name": "yunzhi-checkin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "云智手机每日打卡 + 开心领取奖励 (GitHub Actions + Playwright)",
+  "scripts": {
+    "login": "node scripts/export-login.js",
+    "checkin": "node scripts/checkin.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}
